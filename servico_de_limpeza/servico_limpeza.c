@@ -1,4 +1,5 @@
 //======================================================================
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <locale.h>
@@ -6,6 +7,7 @@
 #include <stdbool.h>
 
 // ======================================================================
+
 #define MAX_CPF              20
 #define MAX_RG               20
 #define MAX_NOME             51
@@ -20,13 +22,14 @@
 #define CAPACIDADE_FAX_VAZIO 50
 
 // =================== Structs ==============================================
+
 typedef struct
 {
-      char cpf[MAX_CPF];            // 999.999.999-99\0\0
-      char rg[MAX_RG];              // 99.999.999-9\0\0
+      char cpf[MAX_CPF];                  // 999.999.999-99\0\0
+      char rg[MAX_RG];                    // 99.999.999-9\0\0
       char nome[MAX_NOME];
       char sexo;
-      char data_nascimento[MAX_DATA];
+      char data_nascimento[MAX_DATA];     // dd/mm/aaaa\0\0
       int quantidade_telefones;
       char telefones[MAX_QT_TELEFONES][MAX_TAM_TELEFONE];
 } faxineiro;
@@ -46,14 +49,15 @@ typedef struct
 
 typedef struct
 {
-      unsigned long int cpf_faxineiro;
-      unsigned long int cpf_cliente;
+      char cpf_faxineiro[MAX_CPF];
+      char cpf_cliente[MAX_CPF];
       char data[MAX_DATA];
       float valor;
 } servico;
 
 // =====================================================================================
-bool arquivo_vazio(char *nome_arquivo)
+
+bool arquivo_vazio(const char *nome_arquivo)
 {
       FILE *arquivo;
       int tamanho_arquivo;
@@ -73,6 +77,7 @@ bool arquivo_vazio(char *nome_arquivo)
       return false;
 }
 // ================= Menus e Submenus ==================================================
+
 int print_menu()
 {
       int opt;
@@ -117,13 +122,14 @@ int print_submenu_relatorios()
 // ================================================== Menus e Submenus =================//
 //
 // ======================= Carregar e Salvar =============================================
-faxineiro *carregar_faxineiros(char *nome_arquivo, int *retorno_tamanho_vetor)
+
+faxineiro *carregar_faxineiros(const char *nome_arquivo, int *retorno_tamanho_vetor)
 {
       FILE *arquivo;
       faxineiro *vetor_faxineiros;
       int tamanho_vetor;
 
-      arquivo = fopen(nome_arquivo, "rb+");
+      arquivo = fopen(nome_arquivo, "rb");
       if (arquivo == NULL)
       {
             perror("Erro ao abrir o arquivo");
@@ -132,15 +138,15 @@ faxineiro *carregar_faxineiros(char *nome_arquivo, int *retorno_tamanho_vetor)
 
       if (fread(&tamanho_vetor, sizeof(int), 1, arquivo) != 1)
       {
-            perror("Erro ao ler o tamanho do vetor");
+            perror("Erro ao ler a quantidade de dados");
             fclose(arquivo);
             exit(EXIT_FAILURE);
       }
 
-      vetor_faxineiros = malloc(tamanho_vetor * sizeof(faxineiro));
+      vetor_faxineiros = (faxineiro *)malloc(tamanho_vetor * sizeof(faxineiro));
       if (vetor_faxineiros == NULL)
       {
-            perror("Erro ao alocar o vetor");
+            perror("Erro ao disponibilizar memória para os dados");
             fclose(arquivo);
             exit(EXIT_FAILURE);
       }
@@ -161,18 +167,23 @@ faxineiro *carregar_faxineiros(char *nome_arquivo, int *retorno_tamanho_vetor)
             exit(EXIT_FAILURE);
       }
 
-      fclose(arquivo);
+      if (fclose(arquivo) == -1)
+      {
+            perror("Erro ao fechar o arquivo");
+            free(vetor_faxineiros);
+            exit(EXIT_FAILURE);
+      }
       *retorno_tamanho_vetor = tamanho_vetor;
       return vetor_faxineiros;
 }
 
-cliente *carregar_clientes(char *nome_arquivo, int *retorno_tamanho_vetor)
+cliente *carregar_clientes(const char *nome_arquivo, int *retorno_tamanho_vetor)
 {
       FILE *arquivo;
       cliente *vetor_clientes;
       int tamanho_vetor;
 
-      arquivo = fopen(nome_arquivo, "rb+");
+      arquivo = fopen(nome_arquivo, "rb");
       if (arquivo == NULL)
       {
             perror("Erro ao abrir o arquivo");
@@ -181,15 +192,15 @@ cliente *carregar_clientes(char *nome_arquivo, int *retorno_tamanho_vetor)
 
       if (fread(&tamanho_vetor, sizeof(int), 1, arquivo) != 1)
       {
-            perror("Erro ao ler o tamanho do vetor");
+            perror("Erro ao ler a quantidade de dados");
             fclose(arquivo);
             exit(EXIT_FAILURE);
       }
 
-      vetor_clientes = malloc(tamanho_vetor * sizeof(cliente));
+      vetor_clientes = (cliente *)malloc(tamanho_vetor * sizeof(cliente));
       if (vetor_clientes == NULL)
       {
-            perror("Erro ao alocar o vetor");
+            perror("Erro ao disponibilizar memória para os dados");
             fclose(arquivo);
             exit(EXIT_FAILURE);
       }
@@ -210,18 +221,23 @@ cliente *carregar_clientes(char *nome_arquivo, int *retorno_tamanho_vetor)
             exit(EXIT_FAILURE);
       }
 
-      fclose(arquivo);
+      if (fclose(arquivo) == -1)
+      {
+            perror("Erro ao fechar o arquivo");
+            free(vetor_clientes);
+            exit(EXIT_FAILURE);
+      }
       *retorno_tamanho_vetor = tamanho_vetor;
       return vetor_clientes;
 }
 
-servico *carregar_servicos(char *nome_arquivo, int *retorno_tamanho_vetor)
+servico *carregar_servicos(const char *nome_arquivo, int *retorno_tamanho_vetor)
 {
       FILE *arquivo;
       servico *vetor_servicos;
       int tamanho_vetor;
 
-      arquivo = fopen(nome_arquivo, "rb+");
+      arquivo = fopen(nome_arquivo, "rb");
       if (arquivo == NULL)
       {
             perror("Erro ao abrir o arquivo");
@@ -230,15 +246,15 @@ servico *carregar_servicos(char *nome_arquivo, int *retorno_tamanho_vetor)
 
       if (fread(&tamanho_vetor, sizeof(int), 1, arquivo) != 1)
       {
-            perror("Erro ao ler o tamanho do vetor");
+            perror("Erro ao ler a quantidade de dados");
             fclose(arquivo);
             exit(EXIT_FAILURE);
       }
 
-      vetor_servicos = malloc(tamanho_vetor * sizeof(servico));
+      vetor_servicos = (servico *)malloc(tamanho_vetor * sizeof(servico));
       if (vetor_servicos == NULL)
       {
-            perror("Erro ao alocar o vetor");
+            perror("Erro ao disponibilizar memória para os dados");
             fclose(arquivo);
             exit(EXIT_FAILURE);
       }
@@ -258,8 +274,13 @@ servico *carregar_servicos(char *nome_arquivo, int *retorno_tamanho_vetor)
             free(vetor_servicos);
             exit(EXIT_FAILURE);
       }
-
-      fclose(arquivo);
+      
+      if (fclose(arquivo) == -1)
+      {
+            perror("Erro ao fechar o arquivo");
+            free(vetor_servicos);
+            exit(EXIT_FAILURE);
+      }
       *retorno_tamanho_vetor = tamanho_vetor;
       return vetor_servicos;
 }
@@ -268,11 +289,10 @@ void salvar_faxineiros(faxineiro *vetor_faxineiros, int tamanho_vetor)
 {
       FILE *arquivo;
 
-      arquivo = fopen("dados_faxineiros.bin", "wb+");
+      arquivo = fopen("dados_faxineiros.bin", "wb");
       if (arquivo == NULL)
       {
             perror("Erro ao abrir o arquivo");
-            fclose(arquivo);
             exit(EXIT_FAILURE);
       }
       if ((fwrite(&tamanho_vetor, sizeof(int), 1, arquivo)) != 1)
@@ -293,11 +313,16 @@ void salvar_faxineiros(faxineiro *vetor_faxineiros, int tamanho_vetor)
             fclose(arquivo);
             exit(EXIT_FAILURE);
       }
-      fclose(arquivo);
+      if (fclose(arquivo) == -1)
+      {
+            perror("Erro ao fexhar o arquivo");
+            exit(EXIT_FAILURE);
+      }
 }
 // ======================================================================= Carregar e Salvar ===== //
 //
 // ===================== Funcoes de Faxineiros ====================================================
+
 int buscar_faxineiro(faxineiro *faxineiros, int inicio, int fim, char *cpf_procurado)
 {
       int meio = (inicio + fim) / 2;
@@ -377,8 +402,6 @@ void adicionar_faxineiro(faxineiro *faxineiros, int indice, char *cpf_a_registra
 
       strcpy(faxineiros[indice].cpf, cpf_a_registrar);
 
-      terminador_string = fgetc(stdin); // para tirar o '\n' do buffer para usar fgets()
-
       printf("Informe o RG: ");
       fgets(faxineiros[indice].rg, sizeof(faxineiros[indice].rg), stdin);
       faxineiros[indice].rg[strcspn(faxineiros[indice].rg, "\n")] = '\0';
@@ -395,7 +418,7 @@ void adicionar_faxineiro(faxineiro *faxineiros, int indice, char *cpf_a_registra
       fgets(faxineiros[indice].data_nascimento, sizeof(faxineiros[indice].data_nascimento), stdin);
       faxineiros[indice].data_nascimento[strcspn(faxineiros[indice].data_nascimento, "\n")] = '\0';
 
-      printf("Informe a quantidade de telefones (Tamanho máximo = 10): ");
+      printf("Informe a quantidade de telefones (Máximo = 10): ");
       scanf("%d", &faxineiros[indice].quantidade_telefones);
       terminador_string = fgetc(stdin);
 
@@ -409,8 +432,13 @@ void adicionar_faxineiro(faxineiro *faxineiros, int indice, char *cpf_a_registra
 
 bool incluir_um_faxineiro(faxineiro **faxineiros, int *tamanho, int *capacidade)
 {
+      faxineiro **temporario;
       char cpf_a_registrar[MAX_CPF];
-      int indice_inserir, i;
+      int indice_inserir;
+      int i;
+      int cpf_no_local;
+      int cpf_entrando;
+      int ultimo_cpf;
       char terminador_string;
 
       printf("\nInforme o CPF a ser cadastrado: ");
@@ -426,21 +454,42 @@ bool incluir_um_faxineiro(faxineiro **faxineiros, int *tamanho, int *capacidade)
       }
       else
       {
-            if ((indice_inserir = busca_para_inserir_faxineiro(*faxineiros, 0, *tamanho - 1, cpf_a_registrar)) == -1)
+            // para compreencao
+            ultimo_cpf = strcmp((*faxineiros)[(*tamanho) - 1].cpf, cpf_a_registrar);
+            cpf_entrando = 0;
+            if (ultimo_cpf < cpf_entrando)
+            {
+                  adicionar_faxineiro(*faxineiros, *tamanho, cpf_a_registrar);
+                  (*tamanho)++;
+                  return true;
+            }
+            if ((indice_inserir = busca_para_inserir_faxineiro(*faxineiros, 0, (*tamanho) - 1, cpf_a_registrar)) == -1)
             {
                   printf("\nCPF já está cadastrado.\n");
                   return false;
             }
             else
             {
+                  printf("%d\n", indice_inserir);
                   if (*capacidade <= *tamanho)
                   {
                         (*capacidade) *= 2;
-                        *faxineiros = (faxineiro *)realloc(*faxineiros, (*capacidade) * sizeof(faxineiro));
+                        *temporario = (faxineiro *)realloc(*faxineiros, (*capacidade) * sizeof(faxineiro));
+                        if (*temporario == NULL)
+                        {
+                              perror("Erro ao aumnetar a memoria");
+                              free(*faxineiros);
+                              exit(EXIT_FAILURE);
+                        }
+                        else
+                              *faxineiros = *temporario;
                   }
-                  if ((*faxineiros)[indice_inserir].cpf > cpf_a_registrar)
+                  // para compreencao
+                  cpf_no_local = strcmp((*faxineiros)[indice_inserir].cpf, cpf_a_registrar);
+                  cpf_entrando = 0;
+                  if (cpf_no_local > cpf_entrando)
                   {
-                        for (i = *tamanho; i > indice_inserir; i--)
+                        for (i = (*tamanho); i > indice_inserir; i--)
                               (*faxineiros)[i] = (*faxineiros)[i - 1];
 
                         adicionar_faxineiro(*faxineiros, indice_inserir, cpf_a_registrar);
@@ -449,21 +498,12 @@ bool incluir_um_faxineiro(faxineiro **faxineiros, int *tamanho, int *capacidade)
                   }
                   else
                   {
-                        // if (indice_inserir == *tamanho - 1)
-                        // {
-                        //       adicionar_faxineiro(*faxineiros, *tamanho, cpf_a_registrar);
-                        //       (*tamanho)++;
-                        //       return true;
-                        // }
-                        // else 
-                        // {
                               for (i = *tamanho; i > indice_inserir + 1; i--)
                                     (*faxineiros)[i] = (*faxineiros)[i - 1];
 
                               adicionar_faxineiro(*faxineiros, indice_inserir + 1, cpf_a_registrar);
                               (*tamanho)++;
                               return true;
-                        // }
                   }
             }
       }
@@ -471,13 +511,17 @@ bool incluir_um_faxineiro(faxineiro **faxineiros, int *tamanho, int *capacidade)
 // =========================================================== Funcoes de Faxineiros ==============//
 //
 // ============================= Mains =============================================================
+
 void main_faxineiros()
 {
       faxineiro *vetor_faxineiros;
-      int opcao, tamanho_vetor, capacidade;
+      int opcao;
+      int tamanho_vetor;
+      int capacidade;
       char cpf[MAX_CPF];
-      char continuar, terminador;
-      char nome_arquivo[] = "dados_faxineiros.bin";
+      char continuar;
+      char terminador;
+      const char nome_arquivo[] = "dados_faxineiros.bin";
 
       if (arquivo_vazio(nome_arquivo))
       {
@@ -553,9 +597,9 @@ void main_faxineiros()
       char salvar;
       do
       {
-            printf("\nSalvar dados?: (s / n): ");
             terminador = fgetc(stdin);
-            scanf("%c", &salvar);
+            printf("\nSalvar dados?: (s / n): ");
+            salvar = fgetc(stdin);
             switch (salvar)
             {
             case 's':
@@ -573,15 +617,16 @@ void main_faxineiros()
       } while (!(salvar == 'n' || salvar == 's'));
 
       if (vetor_faxineiros != NULL)
+      {
             free(vetor_faxineiros);
+            vetor_faxineiros = NULL;
+      }
 }
 
 int main()
 {
       setlocale(LC_ALL, "Portuguese");
-      cliente *vetor_clientes;
-      servico *vetor_servicos;
-      int opcao, tamanho_vetor_clientes, tamanho_vetor_servicos;
+      int opcao;
 
       do // Inicio do ciclo =================================================================================
       {

@@ -6,34 +6,38 @@
 #include <string.h>
 #include <stdbool.h>
 
-// ======================================================================
+// ================== Macros ====================================================
 
-#define MAX_CPF              32
-#define MAX_RG               32
-#define MAX_NOME             64
-#define MAX_DATA             16
-#define MAX_QT_TELEFONES     8
-#define MAX_TAM_TELEFONE     32
-#define MAX_ENDERECO         128
-#define MAX_CEP              16
-#define MAX_CIDADE           128
-#define MAX_QT_EMAILS        8
-#define MAX_TAM_EMAILS       128
-#define CAPACIDADE_FAX_VAZIO 64
+#define MAX_CPF               32    // Tamanho maximo do CPF.
+#define MAX_RG                32    // Tamanho maximo do RG.
+#define MAX_NOME              64    // Tamanho maximo do nome.
+#define MAX_DATA              16    // Tamanho maximo da data.
+#define MAX_QT_TELEFONES      8     // Quantidade maxima de telefones.
+#define MAX_TAM_TELEFONE      32    // Tamanho maximo dos telefones.
+#define MAX_ENDERECO          128   // Tamanho maximo do endereco.
+#define MAX_CEP               16    // Tamanho maximo do CEP.
+#define MAX_CIDADE            128   // Tamanho maximo do nome da cidade.
+#define MAX_QT_EMAILS         8     // Quantidade maxima de emails.
+#define MAX_TAM_EMAILS        128   // Tamanho maximo dos emails.
+#define CAPACIDADE_FAX_VAZIO  64    // Capacidade do vetor dos faxineiros quando vazio.
+#define CAPACIDADE_CLI_VAZIO  64    // Capacidade do vetor dos clientes quando vazio.
+#define CAPACIDADE_SERV_VAZIO 64    // Capacidade do vetor dos servicos quando vazio.
 
 // =================== Structs ==============================================
 
+// CPF Unico
 typedef struct
 {
-      char cpf[MAX_CPF];                  // 999.999.999-99\0\0
-      char rg[MAX_RG];                    // 99.999.999-9\0\0
+      char cpf[MAX_CPF];                  // 999.999.999-99
+      char rg[MAX_RG];                    // 99.999.999-9
       char nome[MAX_NOME];
       char sexo;
-      char data_nascimento[MAX_DATA];     // dd/mm/aaaa\0\0
+      char data_nascimento[MAX_DATA];     // dd/mm/aaaa
       int quantidade_telefones;
       char telefones[MAX_QT_TELEFONES][MAX_TAM_TELEFONE];
 } faxineiro;
 
+// CPF Unico
 typedef struct
 {
       char cpf[MAX_CPF];
@@ -47,6 +51,7 @@ typedef struct
       char telefones[MAX_QT_TELEFONES][MAX_TAM_TELEFONE];         // max = +55 (99) 99999-9999
 } cliente;
 
+// CPFs Unicos. Relacao entre cliente e faxineiro.
 typedef struct
 {
       char cpf_faxineiro[MAX_CPF];
@@ -57,6 +62,11 @@ typedef struct
 
 // =====================================================================================
 
+/* Usado para descobrir se o arquivo esta vazio.
+ * Se o arquivo não existe, ou se ocorrer um erro na hora de abrir,
+ * trata como vazio e retorna true.
+ * Se o arquivo não está vazio, retorna false.
+ */
 bool arquivo_vazio(const char *nome_arquivo)
 {
       FILE *arquivo;
@@ -78,6 +88,7 @@ bool arquivo_vazio(const char *nome_arquivo)
 }
 // ================= Menus e Submenus ==================================================
 
+// Usada para imprimir o Menu Principal e retorna a opcao escolhida pelo usuario.
 int print_menu()
 {
       int opt;
@@ -92,9 +103,10 @@ int print_menu()
       return opt;
 }
 
+// Usada para imprimir o Submenu (Variavel) e retorna a opcao escolhida pelo usuario.
 int print_submenu(char *tipo_submenu)
 {
-      int opt; // Listar todos, Listar um, Incluir (sem repetição), Alterar e Excluir
+      int opt; // Listar todos, Listar um, Incluir (sem repeticao), Alterar e Excluir
       printf("\n1. Listar todos os %ss\n", tipo_submenu);
       printf("2. Listar um %s\n", tipo_submenu);
       printf("3. Incluir um %s\n", tipo_submenu);
@@ -107,6 +119,7 @@ int print_submenu(char *tipo_submenu)
       return opt;
 }
 
+// Usada para imprimir o Submenu dos relatorios e retorna a opcao escolhida pelo usuario.
 int print_submenu_relatorios()
 {
       int opt;
@@ -123,6 +136,7 @@ int print_submenu_relatorios()
 //
 // ======================= Carregar e Salvar =============================================
 
+// Usado para carregar os dados dos faxineiros salvos no arquivo
 faxineiro* carregar_faxineiros(const char* nome_arquivo, int* retorno_tamanho_vetor)
 {
       FILE* arquivo;
@@ -161,6 +175,7 @@ faxineiro* carregar_faxineiros(const char* nome_arquivo, int* retorno_tamanho_ve
       return vetor_faxineiros;
 }
 
+// Usado para carregar os dados dos clientes salvos no arquivo
 cliente* carregar_clientes(const char* nome_arquivo, int* retorno_tamanho_vetor)
 {
       FILE* arquivo;
@@ -199,6 +214,7 @@ cliente* carregar_clientes(const char* nome_arquivo, int* retorno_tamanho_vetor)
       return vetor_clientes;
 }
 
+// Usado para carregar os dados dos servicos salvos no arquivo
 servico* carregar_servicos(const char* nome_arquivo, int* retorno_tamanho_vetor)
 {
       FILE* arquivo;
@@ -236,6 +252,7 @@ servico* carregar_servicos(const char* nome_arquivo, int* retorno_tamanho_vetor)
       return vetor_servicos;
 }
 
+// Usada para salvar os dados dos faxineiros no arquivo.
 void salvar_faxineiros(faxineiro* vetor_faxineiros, int tamanho_vetor)
 {
       FILE* arquivo;
@@ -258,6 +275,7 @@ void salvar_faxineiros(faxineiro* vetor_faxineiros, int tamanho_vetor)
 //
 // ===================== Funcoes de Faxineiros ====================================================
 
+// Usado para encontrar um faxineiro no vetor. Retorna -1 se o faxineiro não está no vetor
 int buscar_faxineiro(faxineiro *faxineiros, int inicio, int fim, char *cpf_procurado)
 {
       if (inicio > fim)
@@ -274,6 +292,9 @@ int buscar_faxineiro(faxineiro *faxineiros, int inicio, int fim, char *cpf_procu
             return buscar_faxineiro(faxineiros, inicio, meio - 1, cpf_procurado);
 }
 
+/* Usado para encontrar o local no vetor para inserir um faxineiro.
+ * Retorna -1 caso o faxineiro já existe no vetor.
+ */
 int busca_para_inserir_faxineiro(faxineiro *faxineiros, int inicio, int fim, char *cpf_procurado)
 {
       if (inicio > fim)
@@ -290,6 +311,7 @@ int busca_para_inserir_faxineiro(faxineiro *faxineiros, int inicio, int fim, cha
             return busca_para_inserir_faxineiro(faxineiros, inicio, meio - 1, cpf_procurado);
 }
 
+// Usado para listar todos os faxineiros no vetor.
 void listar_todos_faxineiros(faxineiro *faxineiros, int tamanho_vetor)
 {
       int i, j;
@@ -309,6 +331,7 @@ void listar_todos_faxineiros(faxineiro *faxineiros, int tamanho_vetor)
       puts("\n");
 }
 
+// Usado para listar um unico faxineiro do vetor. Requer CPF para busca
 void listar_um_faxineiro(faxineiro *faxineiros, int tamanho, char *cpf)
 {
       int indice, i;
@@ -333,7 +356,11 @@ void listar_um_faxineiro(faxineiro *faxineiros, int tamanho, char *cpf)
       }
 }
 
-void adicionar_faxineiro(faxineiro *faxineiros, int indice, char *cpf_a_registrar)
+/* Usado para adicionar os dados no struct faxineiros.
+ * Pode ser usado tanto para adicionar um novo faxineiro, tanto para substituir
+ * os dados de um faxineiro já existente.
+ */
+void adicionar_dados_faxineiro(faxineiro *faxineiros, int indice, char *cpf_a_registrar)
 {
       int i;
       char terminador_string;
@@ -375,6 +402,10 @@ void adicionar_faxineiro(faxineiro *faxineiros, int indice, char *cpf_a_registra
       }
 }
 
+/* Usado para incluir um novo faxineiro já ordenado no vetor.
+ * Retorna true se a inclusão for bem sucedida, e false caso contrário.
+ * Essa funcao ja realoca a memoria quando necessario.
+ */
 bool incluir_um_faxineiro(faxineiro **faxineiros, int *tamanho, int *capacidade)
 {
       char cpf_a_registrar[MAX_CPF];
@@ -386,24 +417,24 @@ bool incluir_um_faxineiro(faxineiro **faxineiros, int *tamanho, int *capacidade)
       char terminador;
 
       printf("\nInforme o CPF a ser cadastrado: ");
-      terminador = fgetc(stdin);
+      while ((terminador = getchar()) != '\n' && terminador != EOF);
       fgets(cpf_a_registrar, sizeof(cpf_a_registrar), stdin);
       cpf_a_registrar[strcspn(cpf_a_registrar, "\n")] = '\0';
 
       if (*tamanho == 0)
       {
-            adicionar_faxineiro(*faxineiros, 0, cpf_a_registrar);
+            adicionar_dados_faxineiro(*faxineiros, 0, cpf_a_registrar);
             (*tamanho)++;
             return true;
       }
       else
       {
-            // para compreencao
+            // Para legibilidade do código
             ultimo_cpf = strcmp((*faxineiros)[(*tamanho) - 1].cpf, cpf_a_registrar);
             cpf_entrando = 0;
             if (ultimo_cpf < cpf_entrando)
             {
-                  adicionar_faxineiro(*faxineiros, *tamanho, cpf_a_registrar);
+                  adicionar_dados_faxineiro(*faxineiros, *tamanho, cpf_a_registrar);
                   (*tamanho)++;
                   return true;
             }
@@ -427,7 +458,7 @@ bool incluir_um_faxineiro(faxineiro **faxineiros, int *tamanho, int *capacidade)
                         else
                               *faxineiros = temporario;
                   }
-                  // para compreencao
+                  // Para legibilidade do código
                   cpf_no_local = strcmp((*faxineiros)[indice_inserir].cpf, cpf_a_registrar);
                   cpf_entrando = 0;
                   if (cpf_no_local > cpf_entrando)
@@ -435,7 +466,7 @@ bool incluir_um_faxineiro(faxineiro **faxineiros, int *tamanho, int *capacidade)
                         for (i = (*tamanho); i > indice_inserir; i--)
                               (*faxineiros)[i] = (*faxineiros)[i - 1];
 
-                        adicionar_faxineiro(*faxineiros, indice_inserir, cpf_a_registrar);
+                        adicionar_dados_faxineiro(*faxineiros, indice_inserir, cpf_a_registrar);
                         (*tamanho)++;
                         return true;
                   }
@@ -444,17 +475,109 @@ bool incluir_um_faxineiro(faxineiro **faxineiros, int *tamanho, int *capacidade)
                               for (i = *tamanho; i > indice_inserir + 1; i--)
                                     (*faxineiros)[i] = (*faxineiros)[i - 1];
 
-                              adicionar_faxineiro(*faxineiros, indice_inserir + 1, cpf_a_registrar);
+                              adicionar_dados_faxineiro(*faxineiros, indice_inserir + 1, cpf_a_registrar);
                               (*tamanho)++;
                               return true;
                   }
             }
       }
 }
+
+/* Usado para alterar os dados de um faxineiro.
+ * Retorna true se a alteracao for bem sucedida, e false caso contrário.
+ */
+bool alterar_faxineiro(faxineiro* vetor_faxineiros, char* cpf, int tamanho)
+{
+      int indice;
+      char confirmar;
+      char terminador;
+
+      indice = buscar_faxineiro(vetor_faxineiros, 0, tamanho - 1, cpf);
+      if (indice == -1)
+      {
+            printf("\nO faxineiro não existe\n");
+            return false;
+      }
+      else
+      {
+            do 
+            {
+                  listar_um_faxineiro(vetor_faxineiros, tamanho, cpf);
+                  printf("\nTem certeza que quer alterar esse faxineiro? ( s / n ): ");
+                  confirmar = fgetc(stdin);
+                  while ((terminador = getchar()) != '\n' && terminador != EOF);
+
+                  if (confirmar == 's')
+                  {
+                        adicionar_dados_faxineiro(vetor_faxineiros, indice, cpf);
+                        return true;
+                  }
+                  else if (confirmar == 'n')
+                  {
+                        printf("\nAlteração cancelada.\n");
+                        return false;
+                  }
+                  else
+                        printf("\nOpção inválida.\n");
+                       
+            } while (confirmar != 'n');
+      }
+      return false;
+}
+
+/* Usado para excluir um faxineiro do vetor.
+ * Retorna true se a exclusao for bem sucedida, e false caso contrário.
+ */
+bool excluir_faxineiro(faxineiro* vetor_faxineiros, char* cpf, int* tamanho)
+{
+      int indice;
+      int i;
+      char confirmar;
+      char terminador;
+
+      indice = buscar_faxineiro(vetor_faxineiros, 0, (*tamanho) - 1, cpf);
+      if (indice == -1)
+      {
+            printf("\nO faxineiro não existe.\n");
+            return false;
+      }
+      else 
+      {
+            do 
+            {
+                  listar_um_faxineiro(vetor_faxineiros, *tamanho, cpf);
+                  printf("\nTem certeza que quer excluir esse faxineiro? ( s / n ): ");
+                  confirmar = fgetc(stdin);
+                  while ((terminador = getchar()) != '\n' && terminador != EOF);
+
+                  if (confirmar == 's')
+                  {
+                        for (i = indice; i < (*tamanho) - 1; i++)
+                        {
+                              vetor_faxineiros[indice] = vetor_faxineiros[indice + 1];
+                        }
+                        (*tamanho)--;
+                        return true;
+                  }
+                  else if (confirmar == 'n')
+                  {
+                        printf("\nExclusão cancelada.\n");
+                        return false;
+                  }
+                  else
+                        printf("\nOpção inválida.\n");
+                       
+            } while (confirmar != 'n');
+      }
+      return false;
+}
 // =========================================================== Funcoes de Faxineiros ==============//
 //
 // ============================= Mains =============================================================
 
+/* Usado para gerenciar o submenu de faxineiros.
+ * Os dados sao locais apenas, e podem ser salvos em arquivos para evitar perdas.
+ */
 void main_faxineiros()
 {
       faxineiro *vetor_faxineiros;
@@ -491,7 +614,7 @@ void main_faxineiros()
                         listar_todos_faxineiros(vetor_faxineiros, tamanho_vetor);
 
                   printf("\nEnter para continuar...");
-                  terminador = fgetc(stdin);
+                  while ((terminador = getchar()) != '\n' && terminador != EOF);
                   continuar = fgetc(stdin);
                   break;
             case 2:
@@ -501,7 +624,7 @@ void main_faxineiros()
                   else
                   {
                         printf("\nInforme o cpf do faxineiro a ser listado: ");
-                        terminador = fgetc(stdin);
+                        while ((terminador = getchar()) != '\n' && terminador != EOF);
                         fgets(cpf, sizeof(cpf), stdin);
                         cpf[strcspn(cpf, "\n")] = '\0';
                         listar_um_faxineiro(vetor_faxineiros, tamanho_vetor, cpf);
@@ -514,18 +637,46 @@ void main_faxineiros()
                   if (incluir_um_faxineiro(&vetor_faxineiros, &tamanho_vetor, &capacidade))
                         printf("\nFaxineiro incluído com sucesso!\n");
                   else
-                        printf("\nNão foi possível incluir o Faxineiro.\n");
+                        printf("\nNão foi possível incluir o faxineiro.\n");
 
                   printf("\nEnter para continuar...");
-                  terminador = fgetc(stdin);
+                  continuar = fgetc(stdin);
                   break;
             case 4:
-                  // alterar um
-
+                  // alterar um faxineiro
+                  if (tamanho_vetor == 0)
+                        printf("\nOps, não tem nada aqui!\n");
+                  else
+                  {
+                        printf("\nInforme o cpf do faxineiro a ser alterado: ");
+                        while ((terminador = getchar()) != '\n' && terminador != EOF);
+                        fgets(cpf, sizeof(cpf), stdin);
+                        cpf[strcspn(cpf, "\n")] = '\0';
+                        if (alterar_faxineiro(vetor_faxineiros, cpf, tamanho_vetor))
+                              printf("\nFaxineiro alterado com sucesso!\n");
+                        else 
+                              printf("\nNão foi possível alterar o faxineiro.\n");
+                  }
+                  printf("\nEnter para continuar...");
+                  continuar = fgetc(stdin);
                   break;
             case 5:
-                  // excluir um
-
+                  // excluir um faxineiro
+                  if (tamanho_vetor == 0)
+                        printf("\nOps, não tem nada aqui!\n");
+                  else
+                  {
+                        printf("\nInforme o cpf do faxineiro a ser excluído: ");
+                        while ((terminador = getchar()) != '\n' && terminador != EOF);
+                        fgets(cpf, sizeof(cpf), stdin);
+                        cpf[strcspn(cpf, "\n")] = '\0';
+                        if (excluir_faxineiro(vetor_faxineiros, cpf, &tamanho_vetor))
+                              printf("\nFaxineiro excluído com sucesso!\n");
+                        else 
+                              printf("\nNão foi possível excluir o faxineiro.\n");
+                  }
+                  printf("\nEnter para continuar...");
+                  continuar = fgetc(stdin);
                   break;
             case 6:
                   printf("\nVoltando...\n");
@@ -540,7 +691,7 @@ void main_faxineiros()
       char salvar;
       do
       {
-            terminador = fgetc(stdin);
+            while ((terminador = getchar()) != '\n' && terminador != EOF);
             printf("\nSalvar dados?: (s / n): ");
             salvar = fgetc(stdin);
             switch (salvar)
@@ -566,9 +717,10 @@ void main_faxineiros()
       }
 }
 
+// Pragrama principal do CRUD
 int main()
 {
-      setlocale(LC_ALL, "Portuguese_Brazil.1252");
+      setlocale(LC_ALL, "pt_BR.UTF-8");         // setlocale(LC_ALL, "Portuguese") não funciona
       int opcao;
 
       do // Inicio do ciclo =================================================================================

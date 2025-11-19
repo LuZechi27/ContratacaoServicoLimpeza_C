@@ -25,7 +25,14 @@
 
 // =================== Structs ==============================================
 
-// CPF Unico
+/* CPF Unico
+ * RG
+ * Nome
+ * Sexo
+ * Data nascimento
+ * Quantidade de telefones (int)
+ * Telefones (vetor)
+ */
 typedef struct
 {
       char cpf[MAX_CPF];                  // 999.999.999-99
@@ -37,7 +44,17 @@ typedef struct
       char telefones[MAX_QT_TELEFONES][MAX_TAM_TELEFONE];
 } faxineiro;
 
-// CPF Unico
+/* CPF Unico
+ * Nome
+ * Data nascimento
+ * Endereco
+ * CEP
+ * Cidade
+ * Quantidade de Emails (int)
+ * Emails (vetor)
+ * Quantidade de telefones (int)
+ * Telefones (vetor)
+ */
 typedef struct
 {
       char cpf[MAX_CPF];
@@ -46,12 +63,17 @@ typedef struct
       char endereço[MAX_ENDERECO];
       char cep[MAX_CEP];
       char cidade[MAX_CIDADE];
+      int quantidade_emails;
       char emails[MAX_QT_EMAILS][MAX_TAM_EMAILS];
       int quantidade_telefones;
       char telefones[MAX_QT_TELEFONES][MAX_TAM_TELEFONE];         // max = +55 (99) 99999-9999
 } cliente;
 
-// CPFs Unicos. Relacao entre cliente e faxineiro.
+/* CPF Unico (faxineiro)
+ * CPF Unico (cliente)
+ * Data
+ * Valor (float)
+ */
 typedef struct
 {
       char cpf_faxineiro[MAX_CPF];
@@ -253,11 +275,11 @@ servico* carregar_servicos(const char* nome_arquivo, int* retorno_tamanho_vetor)
 }
 
 // Usada para salvar os dados dos faxineiros no arquivo.
-void salvar_faxineiros(faxineiro* vetor_faxineiros, int tamanho_vetor)
+void salvar_faxineiros(faxineiro* vetor_faxineiros, const char* nome_arquivo, int tamanho_vetor)
 {
       FILE* arquivo;
 
-      arquivo = fopen("dados_faxineiros.bin", "wb+");
+      arquivo = fopen(nome_arquivo, "wb+");
       if (arquivo == NULL)
       {
             perror("Erro ao abrir o arquivo");
@@ -271,11 +293,51 @@ void salvar_faxineiros(faxineiro* vetor_faxineiros, int tamanho_vetor)
       }
       fclose(arquivo);
 }
+
+// Usada para salvar os dados dos clientes no arquivo.
+void salvar_clientes(cliente* vetor_clientes, const char* nome_arquivo, int tamanho_vetor)
+{
+      FILE* arquivo;
+
+      arquivo = fopen(nome_arquivo, "wb+");
+      if (arquivo == NULL)
+      {
+            perror("Erro ao abrir o arquivo");
+            exit(EXIT_FAILURE);
+      }
+      if ((fwrite(vetor_clientes, sizeof(cliente), tamanho_vetor, arquivo)) != tamanho_vetor)
+      {
+            perror("Erro ao salvar os dados");
+            fclose(arquivo);
+            exit(EXIT_FAILURE);
+      }
+      fclose(arquivo);
+}
+
+// Usada para salvar os dados dos servicos no arquivo.
+void salvar_servicos(servico* vetor_servicos, const char* nome_arquivo, int tamanho_vetor)
+{
+      FILE* arquivo;
+
+      arquivo = fopen(nome_arquivo, "wb+");
+      if (arquivo == NULL)
+      {
+            perror("Erro ao abrir o arquivo");
+            exit(EXIT_FAILURE);
+      }
+      if ((fwrite(vetor_servicos, sizeof(servico), tamanho_vetor, arquivo)) != tamanho_vetor)
+      {
+            perror("Erro ao salvar os dados");
+            fclose(arquivo);
+            exit(EXIT_FAILURE);
+      }
+      fclose(arquivo);
+}
 // ======================================================================= Carregar e Salvar ===== //
 //
 // ===================== Funcoes de Faxineiros ====================================================
 
-// Usado para encontrar um faxineiro no vetor. Retorna -1 se o faxineiro não está no vetor
+// Usado para encontrar um faxineiro no vetor. Retorna -1 se o faxineiro não está no vetor.
 int buscar_faxineiro(faxineiro *faxineiros, int inicio, int fim, char *cpf_procurado)
 {
       if (inicio > fim)
@@ -331,7 +393,7 @@ void listar_todos_faxineiros(faxineiro *faxineiros, int tamanho_vetor)
       puts("\n");
 }
 
-// Usado para listar um unico faxineiro do vetor. Requer CPF para busca
+// Usado para listar um unico faxineiro do vetor. Requer CPF para busca.
 void listar_um_faxineiro(faxineiro *faxineiros, int tamanho, char *cpf)
 {
       int indice, i;
@@ -371,7 +433,7 @@ void adicionar_dados_faxineiro(faxineiro *faxineiros, int indice, char *cpf_a_re
       fgets(faxineiros[indice].rg, sizeof(faxineiros[indice].rg), stdin);
       faxineiros[indice].rg[strcspn(faxineiros[indice].rg, "\n")] = '\0';
 
-      printf("Informe o Nome (Tamanho máximo = 50): ");
+      printf("Informe o Nome (Tamanho máximo = %d): ", MAX_NOME - 2);
       fgets(faxineiros[indice].nome, sizeof(faxineiros[indice].nome), stdin);
       faxineiros[indice].nome[strcspn(faxineiros[indice].nome, "\n")] = '\0';
 
@@ -573,6 +635,175 @@ bool excluir_faxineiro(faxineiro* vetor_faxineiros, char* cpf, int* tamanho)
 }
 // =========================================================== Funcoes de Faxineiros ==============//
 //
+// ===================== Funcoes de Clientes ====================================================
+
+// Usado para encontrar um cliente no vetor. Retorna -1 se o cliente não está no vetor.
+int buscar_cliente(cliente* clientes, int inicio, int fim, char *cpf_procurado)
+{
+      if (inicio > fim)
+            return -1;
+
+      int meio = inicio + (fim - inicio) / 2;
+      int comparacao = strcmp(clientes[meio].cpf, cpf_procurado);
+
+      if (comparacao == 0)
+            return meio;
+      else if (comparacao < 0)
+            return buscar_cliente(clientes, meio + 1, fim, cpf_procurado);
+      else
+            return buscar_cliente(clientes, inicio, meio - 1, cpf_procurado);
+}
+
+/* Usado para encontrar o local no vetor para inserir um cliente.
+ * Retorna -1 caso o cliente já existe no vetor.
+ */
+int busca_para_inserir_cliente(cliente* clientes, int inicio, int fim, char *cpf_procurado)
+{
+      if (inicio > fim)
+            return inicio;
+
+      int meio = inicio + (fim - inicio) / 2;
+      int comparacao = strcmp(clientes[meio].cpf, cpf_procurado);
+
+      if (comparacao == 0)
+            return -1;
+      else if (comparacao < 0)
+            return busca_para_inserir_cliente(clientes, meio + 1, fim, cpf_procurado);
+      else
+            return busca_para_inserir_cliente(clientes, inicio, meio - 1, cpf_procurado);
+}
+
+// Usado para listar todos os clientes no vetor.
+void listar_todos_clientes(cliente* clientes, int tamanho_vetor)
+{
+      int i, j;
+      printf("\nTodos os clientes:");
+      for (i = 0; i < tamanho_vetor; i++)
+      {
+            printf("\nNome: %s\n", clientes[i].nome);
+            printf("CPF : %s\n", clientes[i].cpf);
+            printf("Data de Nascimento: %s\n", clientes[i].data_nascimento);
+            printf("Cidade: %s\n", clientes[i].data_nascimento);
+            printf("Endereço: %s\n", clientes[i].data_nascimento);
+            printf("CEP: %s\n", clientes[i].data_nascimento);
+            printf("Emails:\n");
+            for (j = 0; j < clientes[i].quantidade_emails; j++)
+                  printf("\t%s\n", clientes[i].emails[j]);
+            printf("Telefones: ");
+            for (j = 0; j < clientes[i].quantidade_telefones; j++)
+                  printf("%s | ", clientes[i].telefones[j]);
+            printf("\n");
+      }
+      puts("\n");
+}
+
+// Usado para listar um unico cliente do vetor. Requer CPF para busca.
+void listar_um_cliente(cliente* clientes, int tamanho, char *cpf)
+{
+      int indice, i;
+
+      indice = buscar_cliente(clientes, 0, tamanho - 1, cpf);
+
+      if (indice < 0)
+      {
+            printf("\nO cliente não existe / não está cadastrado!\n");
+      }
+      else
+      {
+            printf("\nNome: %s\n", clientes[indice].nome);
+            printf("CPF : %s\n", clientes[indice].cpf);
+            printf("Data de Nascimento: %s\n", clientes[indice].data_nascimento);
+            printf("Cidade: %s\n", clientes[indice].data_nascimento);
+            printf("Endereço: %s\n", clientes[indice].data_nascimento);
+            printf("CEP: %s\n", clientes[indice].data_nascimento);
+            printf("Emails:\n");
+            for (i = 0; i < clientes[indice].quantidade_emails; i++)
+                  printf("\t%s\n", clientes[indice].emails[i]);
+            printf("Telefones: ");
+            for (i = 0; i < clientes[indice].quantidade_telefones; i++)
+                  printf("%s | ", clientes[indice].telefones[i]);
+            printf("\n");
+      }
+}
+
+/* Usado para adicionar os dados no struct cliente.
+ * Pode ser usado tanto para adicionar um novo cliente, tanto para substituir
+ * os dados de um cliente já existente.
+ */
+void adicionar_dados_cliente(cliente* clientes, int indice, char* cpf_a_registrar)
+{
+      int i;
+      char terminador_string;
+
+      strcpy(clientes[indice].cpf, cpf_a_registrar);
+
+      printf("Informe o Nome (Tamanho máximo = %d): ", MAX_NOME - 2);
+      fgets(clientes[indice].nome, sizeof(clientes[indice].nome), stdin);
+      clientes[indice].nome[strcspn(clientes[indice].nome, "\n")] = '\0';
+
+      printf("Informe a data de nascimento (dd/mm/aaaa): ");
+      fgets(clientes[indice].data_nascimento, sizeof(clientes[indice].data_nascimento), stdin);
+      clientes[indice].data_nascimento[strcspn(clientes[indice].data_nascimento, "\n")] = '\0';
+
+      printf("Informe o endereço: ");
+      fgets(clientes[indice].endereço, sizeof(clientes[indice].endereço), stdin);
+      clientes[indice].endereço[strcspn(clientes[indice].endereço, "\n")] = '\0';
+
+      printf("Informe o CEP: ");
+      fgets(clientes[indice].cep, sizeof(clientes[indice].cep), stdin);
+      clientes[indice].cep[strcspn(clientes[indice].cep, "\n")] = '\0';
+
+      printf("Informe a cidade: ");
+      fgets(clientes[indice].cidade, sizeof(clientes[indice].cidade), stdin);
+      clientes[indice].cidade[strcspn(clientes[indice].cidade, "\n")] = '\0';
+
+      printf("Informe a quantidade de Emails (Máximo = %d): ", MAX_QT_EMAILS);
+      if (scanf("%d", &clientes[indice].quantidade_emails) != 1)
+            clientes[indice].quantidade_emails = 0;
+
+      while ((terminador_string = getchar()) != '\n' && terminador_string != EOF);
+
+      if (clientes[indice].quantidade_emails < 0)
+            clientes[indice].quantidade_emails = 0;
+      if (clientes[indice].quantidade_emails > MAX_QT_EMAILS)
+            clientes[indice].quantidade_emails = MAX_QT_EMAILS;
+
+      for (i = 0; i < clientes[indice].quantidade_emails; i++)
+      {
+            printf("Email %d: ", i + 1);
+            fgets(clientes[indice].emails[i], sizeof(clientes[indice].emails[i]), stdin);
+            clientes[indice].emails[i][strcspn(clientes[indice].emails[i], "\n")] = '\0';
+      }
+
+      printf("Informe a quantidade de telefones (Máximo = %d): ", MAX_QT_TELEFONES);
+      if (scanf("%d", &clientes[indice].quantidade_telefones) != 1)
+            clientes[indice].quantidade_telefones = 0;
+
+      while ((terminador_string = getchar()) != '\n' && terminador_string != EOF);
+
+      if (clientes[indice].quantidade_telefones < 0)
+            clientes[indice].quantidade_telefones = 0;
+      if (clientes[indice].quantidade_telefones > MAX_QT_TELEFONES)
+            clientes[indice].quantidade_telefones = MAX_QT_TELEFONES;
+
+      for (i = 0; i < clientes[indice].quantidade_telefones; i++)
+      {
+            printf("Telefone %d: ", i + 1);
+            fgets(clientes[indice].telefones[i], sizeof(clientes[indice].telefones[i]), stdin);
+            clientes[indice].telefones[i][strcspn(clientes[indice].telefones[i], "\n")] = '\0';
+      }
+}
+
+// =========================================================== Funcoes de Clientes ==============//
+//
+// ===================== Funcoes de Servicos ====================================================
+
+// =========================================================== Funcoes de Servicos ==============//
+//
+// ===================== Funcoes de Relatorios ====================================================
+
+// =========================================================== Funcoes de Relatorios ==============//
+//
 // ============================= Mains =============================================================
 
 /* Usado para gerenciar o submenu de faxineiros.
@@ -587,7 +818,8 @@ void main_faxineiros()
       char cpf[MAX_CPF];
       char continuar;
       char terminador;
-      const char nome_arquivo[] = "dados_faxineiros.bin";
+      const char nome_arquivo[] = "dados_faxineiros.dat";
+      const char arquivo_relatório[] = "relatorio_faxineiros.txt";
 
       if (arquivo_vazio(nome_arquivo))
       {
@@ -699,7 +931,7 @@ void main_faxineiros()
             case 's':
                   // salva
                   printf("Salvando...\n");
-                  salvar_faxineiros(vetor_faxineiros, tamanho_vetor);
+                  salvar_faxineiros(vetor_faxineiros, nome_arquivo, tamanho_vetor);
                   break;
             case 'n':
                   printf("Saindo sem salvar...\n");

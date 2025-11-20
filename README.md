@@ -23,7 +23,7 @@ Além das operações básicas (CRUD), o sistema deve gerar relatórios em arqui
 | CPF                | Cadastro de Pessoa Física | ✔️    |
 | RG                 | Registro Geral            |       |
 | Nome               | Nome completo             |       |
-| Sexo               | M/F/Outro                 |       |
+| Sexo               | M/F                       |       |
 | Data de nascimento | DD/MM/AAAA                |       |
 | Telefones          | Lista de telefones        |       |
 

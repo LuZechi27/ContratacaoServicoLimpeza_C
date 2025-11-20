@@ -108,6 +108,84 @@ bool arquivo_vazio(const char *nome_arquivo)
 
       return false;
 }
+//=================================================================================//
+//
+//================= Funcoes de Busca ==================================================
+
+// Usado para encontrar um faxineiro no vetor. Retorna -1 se o faxineiro não está no vetor.
+int buscar_faxineiro(faxineiro *faxineiros, int inicio, int fim, char *cpf_procurado)
+{
+      if (inicio > fim)
+            return -1;
+
+      int meio = inicio + (fim - inicio) / 2;
+      int comparacao = strcmp(faxineiros[meio].cpf, cpf_procurado);
+
+      if (comparacao == 0)
+            return meio;
+      else if (comparacao < 0)
+            return buscar_faxineiro(faxineiros, meio + 1, fim, cpf_procurado);
+      else
+            return buscar_faxineiro(faxineiros, inicio, meio - 1, cpf_procurado);
+}
+
+/* Usado para encontrar o local no vetor para inserir um faxineiro.
+ * Retorna -1 caso o faxineiro já existe no vetor.
+ */
+int busca_para_inserir_faxineiro(faxineiro *faxineiros, int inicio, int fim, char *cpf_procurado)
+{
+      if (inicio > fim)
+            return inicio;
+
+      int meio = inicio + (fim - inicio) / 2;
+      int comparacao = strcmp(faxineiros[meio].cpf, cpf_procurado);
+
+      if (comparacao == 0)
+            return -1;
+      else if (comparacao < 0)
+            return busca_para_inserir_faxineiro(faxineiros, meio + 1, fim, cpf_procurado);
+      else
+            return busca_para_inserir_faxineiro(faxineiros, inicio, meio - 1, cpf_procurado);
+}
+
+// Usado para encontrar um cliente no vetor. Retorna -1 se o cliente não está no vetor.
+int buscar_cliente(cliente* clientes, int inicio, int fim, char *cpf_procurado)
+{
+      if (inicio > fim)
+            return -1;
+
+      int meio = inicio + (fim - inicio) / 2;
+      int comparacao = strcmp(clientes[meio].cpf, cpf_procurado);
+
+      if (comparacao == 0)
+            return meio;
+      else if (comparacao < 0)
+            return buscar_cliente(clientes, meio + 1, fim, cpf_procurado);
+      else
+            return buscar_cliente(clientes, inicio, meio - 1, cpf_procurado);
+}
+
+/* Usado para encontrar o local no vetor para inserir um cliente.
+ * Retorna -1 caso o cliente já existe no vetor.
+ */
+int busca_para_inserir_cliente(cliente* clientes, int inicio, int fim, char *cpf_procurado)
+{
+      if (inicio > fim)
+            return inicio;
+
+      int meio = inicio + (fim - inicio) / 2;
+      int comparacao = strcmp(clientes[meio].cpf, cpf_procurado);
+
+      if (comparacao == 0)
+            return -1;
+      else if (comparacao < 0)
+            return busca_para_inserir_cliente(clientes, meio + 1, fim, cpf_procurado);
+      else
+            return busca_para_inserir_cliente(clientes, inicio, meio - 1, cpf_procurado);
+}
+
+//=================================================== Funcoes de Busca ==============//
+//
 // ================= Menus e Submenus ==================================================
 
 // Usada para imprimir o Menu Principal e retorna a opcao escolhida pelo usuario.
@@ -337,42 +415,6 @@ void salvar_servicos(servico* vetor_servicos, const char* nome_arquivo, int tama
 //
 // ===================== Funcoes de Faxineiros ====================================================
 
-// Usado para encontrar um faxineiro no vetor. Retorna -1 se o faxineiro não está no vetor.
-int buscar_faxineiro(faxineiro *faxineiros, int inicio, int fim, char *cpf_procurado)
-{
-      if (inicio > fim)
-            return -1;
-
-      int meio = inicio + (fim - inicio) / 2;
-      int comparacao = strcmp(faxineiros[meio].cpf, cpf_procurado);
-
-      if (comparacao == 0)
-            return meio;
-      else if (comparacao < 0)
-            return buscar_faxineiro(faxineiros, meio + 1, fim, cpf_procurado);
-      else
-            return buscar_faxineiro(faxineiros, inicio, meio - 1, cpf_procurado);
-}
-
-/* Usado para encontrar o local no vetor para inserir um faxineiro.
- * Retorna -1 caso o faxineiro já existe no vetor.
- */
-int busca_para_inserir_faxineiro(faxineiro *faxineiros, int inicio, int fim, char *cpf_procurado)
-{
-      if (inicio > fim)
-            return inicio;
-
-      int meio = inicio + (fim - inicio) / 2;
-      int comparacao = strcmp(faxineiros[meio].cpf, cpf_procurado);
-
-      if (comparacao == 0)
-            return -1;
-      else if (comparacao < 0)
-            return busca_para_inserir_faxineiro(faxineiros, meio + 1, fim, cpf_procurado);
-      else
-            return busca_para_inserir_faxineiro(faxineiros, inicio, meio - 1, cpf_procurado);
-}
-
 // Usado para listar todos os faxineiros no vetor.
 void listar_todos_faxineiros(faxineiro *faxineiros, int tamanho_vetor)
 {
@@ -470,6 +512,9 @@ void adicionar_dados_faxineiro(faxineiro *faxineiros, int indice, char *cpf_a_re
  */
 bool incluir_um_faxineiro(faxineiro **faxineiros, int *tamanho, int *capacidade)
 {
+      cliente* vetor_clientes;
+      int tamanho_clientes;
+      const char nome_arquivo_clientes[] = "dados_clientes.dat";
       char cpf_a_registrar[MAX_CPF];
       int indice_inserir;
       int i;
@@ -482,6 +527,19 @@ bool incluir_um_faxineiro(faxineiro **faxineiros, int *tamanho, int *capacidade)
       while ((terminador = getchar()) != '\n' && terminador != EOF);
       fgets(cpf_a_registrar, sizeof(cpf_a_registrar), stdin);
       cpf_a_registrar[strcspn(cpf_a_registrar, "\n")] = '\0';
+
+      if (!arquivo_vazio(nome_arquivo_clientes))
+      {
+            vetor_clientes = carregar_clientes(nome_arquivo_clientes, &tamanho_clientes);
+
+            if (buscar_cliente(vetor_clientes, 0, tamanho_clientes - 1, cpf_a_registrar) != -1)
+            {
+                  printf("\nCPF já está cadastrado.\n");
+                  free(vetor_clientes);
+                  return false;
+            }
+            free(vetor_clientes);
+      }
 
       if (*tamanho == 0)
       {
@@ -637,42 +695,6 @@ bool excluir_faxineiro(faxineiro* vetor_faxineiros, char* cpf, int* tamanho)
 //
 // ===================== Funcoes de Clientes ====================================================
 
-// Usado para encontrar um cliente no vetor. Retorna -1 se o cliente não está no vetor.
-int buscar_cliente(cliente* clientes, int inicio, int fim, char *cpf_procurado)
-{
-      if (inicio > fim)
-            return -1;
-
-      int meio = inicio + (fim - inicio) / 2;
-      int comparacao = strcmp(clientes[meio].cpf, cpf_procurado);
-
-      if (comparacao == 0)
-            return meio;
-      else if (comparacao < 0)
-            return buscar_cliente(clientes, meio + 1, fim, cpf_procurado);
-      else
-            return buscar_cliente(clientes, inicio, meio - 1, cpf_procurado);
-}
-
-/* Usado para encontrar o local no vetor para inserir um cliente.
- * Retorna -1 caso o cliente já existe no vetor.
- */
-int busca_para_inserir_cliente(cliente* clientes, int inicio, int fim, char *cpf_procurado)
-{
-      if (inicio > fim)
-            return inicio;
-
-      int meio = inicio + (fim - inicio) / 2;
-      int comparacao = strcmp(clientes[meio].cpf, cpf_procurado);
-
-      if (comparacao == 0)
-            return -1;
-      else if (comparacao < 0)
-            return busca_para_inserir_cliente(clientes, meio + 1, fim, cpf_procurado);
-      else
-            return busca_para_inserir_cliente(clientes, inicio, meio - 1, cpf_procurado);
-}
-
 // Usado para listar todos os clientes no vetor.
 void listar_todos_clientes(cliente* clientes, int tamanho_vetor)
 {
@@ -800,6 +822,9 @@ void adicionar_dados_cliente(cliente* clientes, int indice, char* cpf_a_registra
  */
 bool incluir_um_cliente(cliente **clientes, int *tamanho, int *capacidade)
 {
+      faxineiro* vetor_faxineiros;
+      int tamanho_faxineiros;
+      const char nome_arquivo_faxineiros[] = "dados_faxineiros.dat";
       char cpf_a_registrar[MAX_CPF];
       int indice_inserir;
       int i;
@@ -812,6 +837,19 @@ bool incluir_um_cliente(cliente **clientes, int *tamanho, int *capacidade)
       while ((terminador = getchar()) != '\n' && terminador != EOF);
       fgets(cpf_a_registrar, sizeof(cpf_a_registrar), stdin);
       cpf_a_registrar[strcspn(cpf_a_registrar, "\n")] = '\0';
+
+      if (!arquivo_vazio(nome_arquivo_faxineiros))
+      {
+            vetor_faxineiros = carregar_faxineiros(nome_arquivo_faxineiros, &tamanho_faxineiros);
+
+            if (buscar_faxineiro(vetor_faxineiros, 0, tamanho_faxineiros - 1, cpf_a_registrar) != -1)
+            {
+                  printf("\nCPF já está cadastrado.\n");
+                  free(vetor_faxineiros);
+                  return false;
+            }
+            free(vetor_faxineiros);
+      }
 
       if (*tamanho == 0)
       {
@@ -1260,7 +1298,6 @@ void main_clientes()
             vetor_clientes = NULL;
       }
 }
-
 
 // Pragrama principal do CRUD
 int main()

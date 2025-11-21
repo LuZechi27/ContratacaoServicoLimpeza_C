@@ -11,7 +11,7 @@
 #define MAX_CPF               32    // Tamanho maximo do CPF.
 #define MAX_RG                32    // Tamanho maximo do RG.
 #define MAX_NOME              64    // Tamanho maximo do nome.
-#define MAX_DATA              16    // Tamanho maximo da data.
+#define MAX_DATA              16    // Tamanho maximo da string de data.
 #define MAX_QT_TELEFONES      8     // Quantidade maxima de telefones.
 #define MAX_TAM_TELEFONE      32    // Tamanho maximo dos telefones.
 #define MAX_ENDERECO          128   // Tamanho maximo do endereco.
@@ -25,11 +25,24 @@
 
 // =================== Structs ==============================================
 
+/* Tipo de data (dd/mm/aaaa) convertido.
+ * dia
+ * mes
+ * ano
+ */
+typedef struct
+{
+      int dia;                // Entre 1 e 31, dependendo do mes.
+      int mes;                // Entre 1 e 12.
+      int ano;                // Pode ser bissexto.
+      bool ano_bissexto;      // Se (ano % 400 == 0) ou se (ano % 4 == 0 && ano % 100 != 0).
+} data;
+
 /* CPF Unico
  * RG
  * Nome
  * Sexo
- * Data nascimento
+ * Data nascimento (struct data)
  * Quantidade de telefones (int)
  * Telefones (vetor)
  */
@@ -39,14 +52,14 @@ typedef struct
       char rg[MAX_RG];                    // 99.999.999-9
       char nome[MAX_NOME];
       char sexo;
-      char data_nascimento[MAX_DATA];     // dd/mm/aaaa
+      data data_nascimento;               // dd/mm/aaaa
       int quantidade_telefones;
       char telefones[MAX_QT_TELEFONES][MAX_TAM_TELEFONE];
 } faxineiro;
 
 /* CPF Unico
  * Nome
- * Data nascimento
+ * Data nascimento (struct data)
  * Endereco
  * CEP
  * Cidade
@@ -59,8 +72,8 @@ typedef struct
 {
       char cpf[MAX_CPF];
       char nome[MAX_NOME];
-      char data_nascimento[MAX_DATA];
-      char endereço[MAX_ENDERECO];
+      data data_nascimento;
+      char endereco[MAX_ENDERECO];
       char cep[MAX_CEP];
       char cidade[MAX_CIDADE];
       int quantidade_emails;
@@ -71,14 +84,14 @@ typedef struct
 
 /* CPF Unico (faxineiro)
  * CPF Unico (cliente)
- * Data
+ * Data (struct data)
  * Valor (float)
  */
 typedef struct
 {
       char cpf_faxineiro[MAX_CPF];
       char cpf_cliente[MAX_CPF];
-      char data[MAX_DATA];
+      data data;
       float valor;
 } servico;
 
@@ -89,7 +102,7 @@ typedef struct
  * trata como vazio e retorna true.
  * Se o arquivo não está vazio, retorna false.
  */
-bool arquivo_vazio(const char *nome_arquivo)
+bool arquivo_vazio(const char* nome_arquivo)
 {
       FILE *arquivo;
       int tamanho_arquivo;
@@ -107,6 +120,67 @@ bool arquivo_vazio(const char *nome_arquivo)
             return true;
 
       return false;
+}
+
+/* Usada para converter uma string de data em uma struct data.
+ * Retorna true se a data e valida e false caso contrario.
+ */
+bool converter_data(char* string_data, data* data_convertida)
+{
+      if (strlen(string_data) != 10)
+      {
+            return false;
+      }
+      int dia;
+      int mes;
+      int ano;
+
+      int pos;
+
+      pos = strcspn(string_data, "/");
+      string_data[pos] = '\0';
+      dia = atoi(string_data);
+      string_data += pos + 1;
+
+      pos = strcspn(string_data, "/");
+      string_data[pos] = '\0';
+      mes = atoi(string_data);
+      string_data += pos + 1;
+
+      ano = atoi(string_data);
+
+      data_convertida->ano = ano;
+      data_convertida->dia = dia;
+      data_convertida->mes = mes;
+
+      int dias_mes;
+
+      if ((ano % 400 == 0) || ((ano % 4 == 0) && (ano % 100 != 0)))
+            data_convertida->ano_bissexto = true;
+      else
+            data_convertida->ano_bissexto = false;
+
+      if (mes >= 1 && mes <= 12)
+      {
+            if (mes == 2)
+            {
+                  if (data_convertida->ano_bissexto)
+                        dias_mes = 29;
+                  else
+                        dias_mes = 28;
+            }
+            else if (mes == 1 || mes == 3 || mes == 5 || mes == 7 || mes == 8 || mes == 10 || mes == 12)
+                  dias_mes = 31;
+            else
+                  dias_mes = 30;
+
+            if (dia < 1 || dia > dias_mes)
+                  return false;
+            else
+                  return true;
+      }
+      else 
+            return false;
 }
 //=================================================================================//
 //
@@ -426,7 +500,10 @@ void listar_todos_faxineiros(faxineiro *faxineiros, int tamanho_vetor)
             printf("CPF : %s\n", faxineiros[i].cpf);
             printf("RG : %s\n", faxineiros[i].rg);
             printf("Sexo : %c\n", faxineiros[i].sexo);
-            printf("Data de nascimento : %s\n", faxineiros[i].data_nascimento);
+            printf("Data de nascimento : %02d/%02d/%04d\n",
+                  faxineiros[i].data_nascimento.dia,
+                  faxineiros[i].data_nascimento.mes,
+                  faxineiros[i].data_nascimento.ano);
             printf("Telefones : ");
             for (j = 0; j < faxineiros[i].quantidade_telefones; j++)
                   printf("%s | ", faxineiros[i].telefones[j]);
@@ -452,7 +529,10 @@ void listar_um_faxineiro(faxineiro *faxineiros, int tamanho, char *cpf)
             printf("CPF : %s\n", faxineiros[indice].cpf);
             printf("RG : %s\n", faxineiros[indice].rg);
             printf("Sexo : %c\n", faxineiros[indice].sexo);
-            printf("Data de nascimento : %s\n", faxineiros[indice].data_nascimento);
+            printf("Data de nascimento : %02d/%02d/%04d\n",
+                  faxineiros[indice].data_nascimento.dia,
+                  faxineiros[indice].data_nascimento.mes,
+                  faxineiros[indice].data_nascimento.ano);
             printf("Telefones : ");
             for (i = 0; i < faxineiros[indice].quantidade_telefones; i++)
                   printf("%s | ", faxineiros[indice].telefones[i]);
@@ -483,9 +563,23 @@ void adicionar_dados_faxineiro(faxineiro *faxineiros, int indice, char *cpf_a_re
       faxineiros[indice].sexo = fgetc(stdin);
       while ((terminador_string = getchar()) != '\n' && terminador_string != EOF);
 
-      printf("Informe a data de nascimento (dd/mm/aaaa): ");
-      fgets(faxineiros[indice].data_nascimento, sizeof(faxineiros[indice].data_nascimento), stdin);
-      faxineiros[indice].data_nascimento[strcspn(faxineiros[indice].data_nascimento, "\n")] = '\0';
+      char data_informada[MAX_DATA];
+      bool valida;
+      data data_nasc;
+
+      do
+      {
+            printf("Informe a data de nascimento (dd/mm/aaaa): ");
+            fgets(data_informada, sizeof(data_informada), stdin);
+            data_informada[strcspn(data_informada, "\n")] = '\0';
+
+            valida = converter_data(data_informada, &data_nasc);
+
+            if (!valida)
+                  printf("Data inválida!\n");
+      } while (!valida);
+
+      faxineiros[indice].data_nascimento = data_nasc;
 
       printf("Informe a quantidade de telefones (Máximo = %d): ", MAX_QT_TELEFONES);
       if (scanf("%d", &faxineiros[indice].quantidade_telefones) != 1)
@@ -704,9 +798,12 @@ void listar_todos_clientes(cliente* clientes, int tamanho_vetor)
       {
             printf("\nNome: %s\n", clientes[i].nome);
             printf("CPF : %s\n", clientes[i].cpf);
-            printf("Data de Nascimento: %s\n", clientes[i].data_nascimento);
+            printf("Data de nascimento : %02d/%02d/%04d\n",
+                  clientes[i].data_nascimento.dia,
+                  clientes[i].data_nascimento.mes,
+                  clientes[i].data_nascimento.ano);
             printf("Cidade: %s\n", clientes[i].cidade);
-            printf("Endereço: %s\n", clientes[i].endereço);
+            printf("Endereço: %s\n", clientes[i].endereco);
             printf("CEP: %s\n", clientes[i].cep);
             printf("Emails:\n");
             for (j = 0; j < clientes[i].quantidade_emails; j++)
@@ -734,10 +831,13 @@ void listar_um_cliente(cliente* clientes, int tamanho, char *cpf)
       {
             printf("\nNome: %s\n", clientes[indice].nome);
             printf("CPF : %s\n", clientes[indice].cpf);
-            printf("Data de Nascimento: %s\n", clientes[indice].data_nascimento);
-            printf("Cidade: %s\n", clientes[indice].data_nascimento);
-            printf("Endereço: %s\n", clientes[indice].data_nascimento);
-            printf("CEP: %s\n", clientes[indice].data_nascimento);
+            printf("Data de nascimento : %02d/%02d/%04d\n",
+                  clientes[indice].data_nascimento.dia,
+                  clientes[indice].data_nascimento.mes,
+                  clientes[indice].data_nascimento.ano);
+            printf("Cidade: %s\n", clientes[indice].cidade);
+            printf("Endereço: %s\n", clientes[indice].endereco);
+            printf("CEP: %s\n", clientes[indice].cep);
             printf("Emails:\n");
             for (i = 0; i < clientes[indice].quantidade_emails; i++)
                   printf("\t%s\n", clientes[indice].emails[i]);
@@ -763,13 +863,27 @@ void adicionar_dados_cliente(cliente* clientes, int indice, char* cpf_a_registra
       fgets(clientes[indice].nome, sizeof(clientes[indice].nome), stdin);
       clientes[indice].nome[strcspn(clientes[indice].nome, "\n")] = '\0';
 
-      printf("Informe a data de nascimento (dd/mm/aaaa): ");
-      fgets(clientes[indice].data_nascimento, sizeof(clientes[indice].data_nascimento), stdin);
-      clientes[indice].data_nascimento[strcspn(clientes[indice].data_nascimento, "\n")] = '\0';
+      char data_informada[MAX_DATA];
+      bool valida;
+      data data_nasc;
+
+      do
+      {
+            printf("Informe a data de nascimento (dd/mm/aaaa): ");
+            fgets(data_informada, sizeof(data_informada), stdin);
+            data_informada[strcspn(data_informada, "\n")] = '\0';
+
+            valida = converter_data(data_informada, &data_nasc);
+
+            if (!valida)
+                  printf("Data inválida!\n");
+      } while (!valida);
+
+      clientes[indice].data_nascimento = data_nasc;
 
       printf("Informe o endereço: ");
-      fgets(clientes[indice].endereço, sizeof(clientes[indice].endereço), stdin);
-      clientes[indice].endereço[strcspn(clientes[indice].endereço, "\n")] = '\0';
+      fgets(clientes[indice].endereco, sizeof(clientes[indice].endereco), stdin);
+      clientes[indice].endereco[strcspn(clientes[indice].endereco, "\n")] = '\0';
 
       printf("Informe o CEP: ");
       fgets(clientes[indice].cep, sizeof(clientes[indice].cep), stdin);

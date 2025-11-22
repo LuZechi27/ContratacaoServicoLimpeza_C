@@ -4,10 +4,10 @@ Um sistema para uma prestadora de serviço de limpeza (faxinas) precisa
 gerenciar os dados sobre cada faxineiro(a) e os clientes que contratam os seus serviços.
 
 Os dados a serem armazenados sobre cada entidade são apresentados a seguir:
-Faxineiro = (_CPF_, RG, nome, sexo, data de nascimento, telefones)
-Cliente = (_CPF_, nome, data de nascimento, endereço, CEP, cidade, e-mails,
+Faxineiro = (*CPF*, RG, nome, sexo, data de nascimento, telefones)
+Cliente = (*CPF*, nome, data de nascimento, endereço, CEP, cidade, e-mails,
 telefones)
-Serviço = (_CPF faxineiro_, _CPF cliente_, data, valor)
+Serviço = (*CPF faxineiro*, *CPF cliente*, *data*, valor)
 
 Atenção: os atributos grifados são chaves e você NÃO deve permitir a inclusão
 de mais de um cadastro com os mesmos valores para os atributos chaves.

@@ -185,6 +185,41 @@ bool converter_data(char* string_data, data* data_convertida)
       else 
             return false;
 }
+
+void converte_data_para_string(data data_a_converter, char *data_convertida)
+{
+      char dia[4];
+      char mes[4];
+      char ano[5];
+
+      snprintf(dia, sizeof(dia), "%02d", data_a_converter.dia);
+      dia[2] = '/';
+      dia[3] = '\0';
+      strcpy(data_convertida, dia);
+
+      snprintf(mes, sizeof(mes), "%02d", data_a_converter.mes);
+      mes[2] = '/';
+      mes[3] = '\0';
+      strcat(data_convertida, mes);
+
+      snprintf(ano, sizeof(ano), "%04d", data_a_converter.ano);
+      strcat(data_convertida, ano);
+}
+
+bool data_menor_ou_igual(data data1, data data2)
+{
+      if (data1.ano != data2.ano)
+            return data1.ano < data2.ano;
+      if (data1.mes != data2.mes)
+            return data1.mes < data2.mes;
+      return  data1.dia <= data2.dia;
+}
+
+bool data_esta_no_intervalo(data data_comparada, data data_inicio, data data_final)
+{     
+      return data_menor_ou_igual(data_inicio, data_comparada) && data_menor_ou_igual(data_comparada, data_final);
+}
+
 //=================================================================================//
 //
 //================= Funcoes de Busca ==================================================
@@ -308,9 +343,9 @@ int busca_para_inserir_servico(servico* servicos, int inicio, int fim, char* ide
       if (comparacao == 0)
             return -1;
       else if (comparacao < 0)
-            return buscar_servico(servicos, meio + 1, fim, identificador);
+            return busca_para_inserir_servico(servicos, meio + 1, fim, identificador);
       else 
-            return buscar_servico(servicos, inicio, meio - 1, identificador);
+            return busca_para_inserir_servico(servicos, inicio, meio - 1, identificador);
 }
 
 //=================================================== Funcoes de Busca ==============//
@@ -1187,10 +1222,26 @@ void listar_todos_servicos(servico* servicos, faxineiro* faxineiros, cliente* cl
             int indice_faxineiro = buscar_faxineiro(faxineiros, 0, tamanhos[1] - 1, servicos[i].cpf_faxineiro);
             int indice_cliente = buscar_cliente(clientes, 0, tamanhos[2] - 1, servicos[i].cpf_cliente);
 
-            printf("\nCPF do faxineiro: %s\n", servicos[i].cpf_faxineiro);
-            printf("Nome do faxineiro(a): %s\n", faxineiros[indice_faxineiro].nome);
-            printf("CPF do cliente: %s\n", servicos[i].cpf_cliente);
-            printf("Nome do cliente: %s\n", clientes[indice_cliente].nome);
+            if (indice_faxineiro == -1)
+            {
+                  printf("\nFaxineiro Removido!\n");
+            }
+            else
+            {
+                  printf("\nCPF do faxineiro: %s\n", servicos[i].cpf_faxineiro);
+                  printf("Nome do faxineiro(a): %s\n", faxineiros[indice_faxineiro].nome);
+            }
+
+            if (indice_cliente == -1)
+            {
+                  printf("Cliente Removido!\n");
+            }
+            else 
+            {
+                  printf("CPF do cliente: %s\n", servicos[i].cpf_cliente);
+                  printf("Nome do cliente: %s\n", clientes[indice_cliente].nome);
+            }
+            
             printf("Data do serviço: %02d/%02d/%04d\n",
                   servicos[i].data.dia,
                   servicos[i].data.mes,
@@ -1221,10 +1272,26 @@ void listar_um_servico(servico* servicos, faxineiro* faxineiros, cliente* client
             int indice_faxineiro = buscar_faxineiro(faxineiros, 0, tamanhos[1] - 1, servicos[indice].cpf_faxineiro);
             int indice_cliente = buscar_cliente(clientes, 0, tamanhos[2] - 1, servicos[indice].cpf_cliente);
 
-            printf("\nCPF do faxineiro: %s\n", servicos[indice].cpf_faxineiro);
-            printf("Nome do faxineiro(a): %s\n", faxineiros[indice_faxineiro].nome);
-            printf("CPF do cliente: %s\n", servicos[indice].cpf_cliente);
-            printf("Nome do cliente: %s\n", clientes[indice_cliente].nome);
+            if (indice_faxineiro == -1)
+            {
+                  printf("\nFaxineiro Removido!\n");
+            }
+            else
+            {
+                  printf("\nCPF do faxineiro: %s\n", servicos[indice].cpf_faxineiro);
+                  printf("Nome do faxineiro(a): %s\n", faxineiros[indice_faxineiro].nome);
+            }
+
+            if (indice_cliente == -1)
+            {
+                  printf("Cliente Removido!\n");
+            }
+            else 
+            {
+                  printf("CPF do cliente: %s\n", servicos[indice].cpf_cliente);
+                  printf("Nome do cliente: %s\n", clientes[indice_cliente].nome);
+            }
+
             printf("Data do serviço: %02d/%02d/%04d\n",
                   servicos[indice].data.dia,
                   servicos[indice].data.mes,
@@ -1425,6 +1492,358 @@ bool excluir_servico(servico* servicos, faxineiro* faxineiros, cliente* clientes
 //
 // ===================== Funcoes de Relatorios ====================================================
 
+/* Usada para mostrar o relatorio dos clientes atendidos 
+ * por um faxineiro X entre as datas Y e Z.
+ */
+bool atendidos_entre_datas(cliente *vetor_clientes, servico *vetor_servicos, int *tamanhos,
+      char *cpf_informado, char *data_inicial, char *data_final, const char *nome_arquivo)
+{
+      FILE *arquivo;
+      servico *servicos_do_faxineiro;
+      cliente *clientes_ja_escolhidos;
+
+      int tamanho_serv_faxineiro = 0;
+      int tamanho_cliente_escolhido = 0;
+      int eh_do_faxineiro_informado;
+      int esta_entre_datas;
+      int i, j;
+
+      char data_inicial_converter[MAX_DATA];
+      char data_final_converter[MAX_DATA];
+
+      data inicial;
+      data final;
+
+      strcpy(data_inicial_converter, data_inicial);
+      strcpy(data_final_converter, data_final);
+
+      converter_data(data_inicial_converter, &inicial);
+      converter_data(data_final_converter, &final);
+
+      servicos_do_faxineiro = (servico *)calloc(tamanhos[0], sizeof(servico));
+      if (servicos_do_faxineiro == NULL)
+      {
+            perror("Erro de memória");
+            exit(EXIT_FAILURE);
+      }
+      clientes_ja_escolhidos = (cliente *)calloc(tamanhos[2], sizeof(cliente));
+      if (clientes_ja_escolhidos == NULL)
+      {
+            perror("Erro de memória");
+            exit(EXIT_FAILURE);
+      }
+
+      for (i = 0; i < tamanhos[0]; i++)
+      {
+            eh_do_faxineiro_informado = (strcmp(vetor_servicos[i].cpf_faxineiro, cpf_informado) == 0);
+            esta_entre_datas = data_esta_no_intervalo(vetor_servicos[i].data, inicial, final);
+
+            if (eh_do_faxineiro_informado && esta_entre_datas)
+            {
+                  servicos_do_faxineiro[tamanho_serv_faxineiro] = vetor_servicos[i];
+                  tamanho_serv_faxineiro++;
+            }
+      }
+
+      int indice;
+      bool ja_foi_escolhido;
+
+      if (tamanho_serv_faxineiro > 0)
+      {
+            indice = buscar_cliente(vetor_clientes, 0, tamanhos[2] - 1, servicos_do_faxineiro[0].cpf_cliente);
+            if (indice == -1)
+            {
+                  printf("\nErro: cliente foi removido.\n");
+                  return false;
+            }
+
+            clientes_ja_escolhidos[0] = vetor_clientes[indice];
+            tamanho_cliente_escolhido++;
+
+            for (i = 1; i < tamanho_serv_faxineiro; i++)
+            {
+                  indice = buscar_cliente(vetor_clientes, 0, tamanhos[2] - 1, servicos_do_faxineiro[i].cpf_cliente);
+                  if (indice == -1)
+                  {
+                        printf("\nErro: cliente foi removido.\n");
+                        return false;
+                  }
+
+                  ja_foi_escolhido = false;
+                  for (j = 0; j < tamanho_cliente_escolhido; j++)
+                  {
+                        if (strcmp(vetor_clientes[indice].cpf, clientes_ja_escolhidos[j].cpf) == 0)
+                        {
+                              ja_foi_escolhido = true;
+                              break;
+                        }
+                  }
+
+                  if (!ja_foi_escolhido)
+                  {
+                        clientes_ja_escolhidos[tamanho_cliente_escolhido] = vetor_clientes[indice];
+                        tamanho_cliente_escolhido++;
+                  }
+            }
+
+            arquivo = fopen(nome_arquivo, "a+");
+            if (arquivo == NULL)
+            {
+                  perror("Erro ao abrir o arquivo");
+                  free(servicos_do_faxineiro);
+                  free(clientes_ja_escolhidos);
+                  return false;
+            }
+
+            fputs("\nClientes atendidos pelo CPF ", arquivo);
+            fputs(cpf_informado, arquivo);
+            fputs(" entre as datas ", arquivo);
+            fputs(data_inicial, arquivo);
+            fputs(" e ", arquivo);
+            fputs(data_final, arquivo);
+            fputs("\n", arquivo);
+
+            printf("\nClientes atendidos pelo CPF %s entre as datas %s e %s\n",
+                  cpf_informado, data_inicial, data_final);
+
+            for (i = 0; i < tamanho_cliente_escolhido; i++)
+            {
+                  fputs("\nNome : ", arquivo);
+                  fputs(clientes_ja_escolhidos[i].nome, arquivo);
+                  fputs("\n", arquivo);
+                  fputs("Emails : ", arquivo);
+
+                  printf("\nNome : %s\n", clientes_ja_escolhidos[i].nome);
+                  printf("Emails : ");
+
+                  for (j = 0; j < clientes_ja_escolhidos[i].quantidade_emails; j++)
+                  {
+                        fputs(clientes_ja_escolhidos[i].emails[j], arquivo);
+                        fputs(" , ", arquivo);
+
+                        printf("%s , ", clientes_ja_escolhidos[i].emails[j]);
+                  }
+                  fputs("\n", arquivo);
+                  printf("\n");
+
+                  fputs("Telefones : ", arquivo);
+                  printf("Telefones : ");
+
+                  for (j = 0; j < clientes_ja_escolhidos[i].quantidade_telefones; j++)
+                  {
+                        fputs(clientes_ja_escolhidos[i].telefones[j], arquivo);
+                        fputs(" , ", arquivo);
+
+                        printf("%s , ", clientes_ja_escolhidos[i].telefones[j]);
+                  }
+                  fputs("\n", arquivo);
+                  printf("\n");
+            }
+            fclose(arquivo);
+      }
+      else
+      {
+            printf("\nNão há nenhum serviço do faxineiro informado entre as datas informadas.\n");
+      }
+      free(servicos_do_faxineiro);
+      free(clientes_ja_escolhidos);
+      
+      return true;
+}
+
+bool servicos_data_especifica(servico *servicos, faxineiro *faxineiros, cliente *clientes,
+      int *tamanhos, char *data_especifica_string, const char *nome_arquivo)
+{
+      FILE *arquivo;
+      servico *servicos_data;
+      int tamanho_serv_data = 0;
+
+      char data_string[2 * MAX_DATA];
+      char string_valor[16];
+      int indice;
+      int i;
+
+      servicos_data = (servico *)calloc(tamanhos[0], sizeof(servico));
+      if (servicos_data == NULL)
+      {
+            perror("Erro de memória");
+            exit(EXIT_FAILURE);
+      }
+
+      for (i = 0; i < tamanhos[0]; i++)
+      {
+            converte_data_para_string(servicos[i].data, data_string);
+
+            if (strcmp(data_string, data_especifica_string) == 0)
+            {
+                  servicos_data[tamanho_serv_data] = servicos[i];
+                  tamanho_serv_data++;
+            }
+      }
+
+      if (tamanho_serv_data > 0)
+      {
+            arquivo = fopen(nome_arquivo, "a+");
+            if (arquivo == NULL)
+            {
+                  perror("Erro ao abrir o arquivo");
+                  free(servicos_data);
+                  return false;
+            }
+
+            fputs("\nServicos contratados na data ", arquivo);
+            fputs(data_especifica_string, arquivo);
+            fputs("\n",arquivo);
+
+            printf("\nServicos contratados na data %s\n", data_especifica_string);
+
+            for (i = 0; i < tamanho_serv_data; i++)
+            {
+                  indice = buscar_faxineiro(faxineiros, 0, tamanhos[1] - 1, servicos_data[i].cpf_faxineiro);
+                  
+                  fputs("\nServiço:\n\tFaxineiro: ", arquivo);
+                  printf("\nServiço:\n\tFaxineiro: ");
+                  
+                  if (indice == -1)
+                  {
+                        printf("Faxineiro Removido!\n");
+                        fputs("Faxineiro removido!\n", arquivo);
+                  }
+                  else
+                  {
+                        fputs(faxineiros[indice].nome, arquivo);
+                        fputs(" (CPF ", arquivo);
+                        fputs(faxineiros[indice].cpf, arquivo);
+                        fputs(")\n", arquivo);
+
+                        printf("%s (CPF %s)\n", faxineiros[indice].nome, faxineiros[indice].cpf);
+                  }
+
+                  indice = buscar_cliente(clientes, 0, tamanhos[2] - 1, servicos_data[i].cpf_cliente);
+
+                  fputs("\tCliente: ", arquivo);
+                  printf("\tCliente: ");
+
+                  if (indice == -1)
+                  {
+                        printf("Cliente Removido!\n");
+                        fputs("Cliente removido!\n", arquivo);
+                  }
+                  else
+                  {
+                        fputs(clientes[indice].nome, arquivo);
+                        fputs(" (CPF ", arquivo);
+                        fputs(clientes[indice].cpf, arquivo);
+                        fputs(")\n", arquivo);
+
+                        printf("%s (CPF %s)\n", clientes[indice].nome, clientes[indice].cpf);
+                  }
+
+                  snprintf(string_valor, sizeof(string_valor), "\tValor: %.2f\n", servicos_data[i].valor);
+                  fputs(string_valor, arquivo);
+                  
+                  printf("\tValor: %.2f\n", servicos_data[i].valor);
+            }
+            fclose(arquivo);
+      }
+      else
+      {
+            printf("\nNão há nenhum serviço na data informada.\n");
+      }
+      free(servicos_data);
+      return true;
+}
+
+bool servicos_por_faxineiro(servico *servicos, cliente *clientes, char *cpf_faxineiro, int *tamanhos, const char *nome_arquivo)
+{
+      FILE *arquivo;
+      servico *servicos_do_faxineiro;
+
+      int tamanho_serv_faxineiro = 0;
+      int indice;
+      int i;
+
+      char data_string[MAX_DATA];
+      char string_valor[16];
+
+      servicos_do_faxineiro = (servico *)calloc(tamanhos[0], sizeof(servico));
+      if (servicos_do_faxineiro == NULL)
+      {
+            perror("Erro de memória");
+            exit(EXIT_FAILURE);
+      }
+
+      for (i = 0; i < tamanhos[0]; i++)
+      {
+            if (strcmp(servicos[i].cpf_faxineiro, cpf_faxineiro) == 0)
+            {
+                  servicos_do_faxineiro[tamanho_serv_faxineiro] = servicos[i];
+                  tamanho_serv_faxineiro++;
+            }
+      }
+
+      if (tamanho_serv_faxineiro > 0)
+      {
+            arquivo = fopen(nome_arquivo, "a+");
+            if (arquivo == NULL)
+            {
+                  perror("Erro ao abrir o arquivo");
+                  free(servicos_do_faxineiro);
+                  return false;
+            }
+
+            fputs("\nServicos realizados por CPF: ", arquivo);
+            fputs(cpf_faxineiro, arquivo);
+            fputs("\n",arquivo);
+
+            printf("\nServicos realizados por CPF: %s\n", cpf_faxineiro);
+
+            for (i = 0; i < tamanho_serv_faxineiro; i++)
+            {
+                  converte_data_para_string(servicos_do_faxineiro[i].data, data_string);
+
+                  fputs("\nServiço realizado em ", arquivo);
+                  fputs(data_string, arquivo);
+                  fputs("\n", arquivo);
+
+                  printf("\nServiço realizado em %s\n", data_string);
+
+                  indice = buscar_cliente(clientes, 0, tamanhos[2] - 1, servicos_do_faxineiro[i].cpf_cliente);
+
+                  fputs("\tCliente: ", arquivo);
+                  printf("\tCliente: ");
+
+                  if (indice == -1)
+                  {
+                        printf("Cliente Removido!\n");
+                        fputs("Cliente removido!\n", arquivo);
+                  }
+                  else
+                  {
+                        fputs(clientes[indice].nome, arquivo);
+                        fputs(" (CPF ", arquivo);
+                        fputs(clientes[indice].cpf, arquivo);
+                        fputs(")\n", arquivo);
+
+                        printf("%s (CPF %s)\n", clientes[indice].nome, clientes[indice].cpf);
+                  }
+
+                  snprintf(string_valor, sizeof(string_valor), "\tValor: %.2f\n", servicos_do_faxineiro[i].valor);
+                  fputs(string_valor, arquivo);
+                  
+                  printf("\tValor: %.2f\n", servicos_do_faxineiro[i].valor);
+            }
+            fclose(arquivo);
+      }
+      else
+      {
+            printf("\nNão há nenhum serviço realizado pelo faxineiro informado.\n");
+      }
+
+      free(servicos_do_faxineiro);
+      return true;
+}
+
 // =========================================================== Funcoes de Relatorios ==============//
 //
 // ============================= Mains =============================================================
@@ -1445,7 +1864,6 @@ void main_faxineiros()
       char terminador;
 
       const char nome_arquivo[] = "dados_faxineiros.dat";
-      const char arquivo_relatorio[] = "relatorio_faxineiros.txt";
 
       if (arquivo_vazio(nome_arquivo))
       {
@@ -1591,7 +2009,6 @@ void main_clientes()
       char terminador;
 
       const char nome_arquivo[] = "dados_clientes.dat";
-      const char arquivo_relatorio[] = "relatorio_clientes.txt";
 
       if (arquivo_vazio(nome_arquivo))
       {
@@ -1752,13 +2169,8 @@ void main_servicos()
       data data_convertida;
 
       const char nome_arquivo_servicos[] = "dados_servicos.dat";
-      const char arquivo_relatorio_servicos[] = "relatorio_servicos.txt";
-
       const char nome_arquivo_faxineiros[] = "dados_faxineiros.dat";
-      const char arquivo_relatorio_faxineiros[] = "relatorio_faxineiros.txt";
-
       const char nome_arquivo_clientes[] = "dados_clientes.dat";
-      const char arquivo_relatorio_clientes[] = "relatorio_clientes.txt";
 
       // arquivo servicos
       if (arquivo_vazio(nome_arquivo_servicos))
@@ -2071,6 +2483,241 @@ void main_servicos()
       }
 }
 
+/* Usado para gerenciar o submenu de relatorios.
+ * Os dados sao locais apenas, e podem ser salvos em arquivos para evitar perdas.
+ */
+void main_relatorios()
+{
+      faxineiro *vetor_faxineiros;
+      cliente *vetor_clientes;
+      servico *vetor_servicos;
+
+      int opcao;
+
+      int tamanho_servico;
+      int tamanho_cliente;
+      int tamanho_faxineiro;
+
+      int capacidade_servicos;
+      int capacidade_faxineiros;
+      int capacidade_clientes;
+
+      char* identificador;
+      char cpf_faxineiro[MAX_CPF];
+      char cpf_cliente[MAX_CPF];
+      char continuar;
+      char terminador;
+
+      char data_servico[MAX_DATA];
+      char data_informada[MAX_DATA];
+      char data_inicial[MAX_DATA];
+      char data_final[MAX_DATA];
+      bool valida;
+      data data_convertida_inicial;
+      data data_convertida_final;
+      data data_convertida;
+
+      const char nome_arquivo_servicos[] = "dados_servicos.dat";
+      const char nome_arquivo_faxineiros[] = "dados_faxineiros.dat";
+      const char nome_arquivo_clientes[] = "dados_clientes.dat";
+
+      const char arquivo_relatorio1[] = "relatorio1.txt";
+      const char arquivo_relatorio2[] = "relatorio2.txt";
+      const char arquivo_relatorio3[] = "relatorio3.txt";
+
+      // arquivo servicos
+      if (arquivo_vazio(nome_arquivo_servicos))
+      {
+            vetor_servicos = (servico *)calloc(CAPACIDADE_SERV_VAZIO, sizeof(servico));
+            tamanho_servico = 0;
+            capacidade_servicos = CAPACIDADE_SERV_VAZIO;
+      }           
+      else
+      {
+            vetor_servicos = carregar_servicos(nome_arquivo_servicos, &tamanho_servico);
+            capacidade_servicos = tamanho_servico * 2;
+      }
+
+      // arquivo faxineiros
+      if (arquivo_vazio(nome_arquivo_faxineiros))
+      {
+            vetor_faxineiros = (faxineiro *)calloc(CAPACIDADE_FAX_VAZIO, sizeof(faxineiro));
+            tamanho_faxineiro = 0;
+            capacidade_faxineiros = CAPACIDADE_FAX_VAZIO;
+      }           
+      else
+      {
+            vetor_faxineiros = carregar_faxineiros(nome_arquivo_faxineiros, &tamanho_faxineiro);
+            capacidade_faxineiros = tamanho_faxineiro * 2;
+      }
+
+      // arquivo clientes
+      if (arquivo_vazio(nome_arquivo_clientes))
+      {
+            vetor_clientes = (cliente *)calloc(CAPACIDADE_CLI_VAZIO, sizeof(cliente));
+            tamanho_cliente = 0;
+            capacidade_clientes = CAPACIDADE_CLI_VAZIO;
+      }           
+      else
+      {
+            vetor_clientes = carregar_clientes(nome_arquivo_clientes, &tamanho_cliente);
+            capacidade_clientes = tamanho_cliente * 2;
+      }
+
+      // [tamanho_servico, tamanho_faxineiro, tamanho_cliente]
+      int tamanhos[3] = {tamanho_servico, tamanho_faxineiro, tamanho_cliente};
+
+       do
+      {
+            opcao = print_submenu_relatorios();
+            switch (opcao)
+            {
+            case 1:
+                  // 1. Listar clientes de um faxineiro entre datas X até Y
+
+                  if (tamanho_servico == 0)
+                        printf("\nOps, não tem nada aqui!\n");
+
+                  else
+                  {
+                        while ((terminador = getchar()) != '\n' && terminador != EOF);
+
+                        printf("\nInforme o cpf do faxineiro do serviço: ");
+                        fgets(cpf_faxineiro, sizeof(cpf_faxineiro), stdin);
+                        cpf_faxineiro[strcspn(cpf_faxineiro, "\n")] = '\0';
+                        if (buscar_faxineiro(vetor_faxineiros, 0, tamanhos[1] - 1, cpf_faxineiro) == -1)
+                        {
+                              printf("\nO faxineiro não existe!\n");
+                              break;
+                        }
+
+                        do
+                        {
+                              printf("Informe a data de inicio (dd/mm/aaaa): ");
+                              fgets(data_informada, sizeof(data_informada), stdin);
+                              data_informada[strcspn(data_informada, "\n")] = '\0';
+
+                              strcpy(data_inicial, data_informada);
+
+                              valida = converter_data(data_informada, &data_convertida_inicial);
+
+                              if (!valida)
+                                    printf("Data inválida!\n");
+                        } while (!valida);
+
+                        do
+                        {
+                              printf("Informe a data final (dd/mm/aaaa): ");
+                              fgets(data_informada, sizeof(data_informada), stdin);
+                              data_informada[strcspn(data_informada, "\n")] = '\0';
+
+                              strcpy(data_final, data_informada);
+
+                              valida = converter_data(data_informada, &data_convertida_final);
+
+                              if (valida)
+                              {
+                                    if (!data_menor_ou_igual(data_convertida_inicial, data_convertida_final))
+                                          valida = false;
+                              }
+
+                              if (!valida)
+                                    printf("Data inválida, certifique-se de que a data final é maior que a inicial.\n");
+                        } while (!valida);
+
+                        if (!atendidos_entre_datas(vetor_clientes, vetor_servicos, tamanhos, cpf_faxineiro,
+                              data_inicial, data_final, arquivo_relatorio1))
+                        {
+                              printf("\nOcorreu um erro\n");
+                        }
+                  }
+                  printf("\nEnter para continuar...");
+                  continuar = fgetc(stdin);
+                  break;
+            case 2:
+                  // 2. Listar serviços de uma data específica
+
+                  if (tamanho_servico == 0)
+                        printf("\nOps, não tem nada aqui!\n");
+                  else
+                  {
+                        while ((terminador = getchar()) != '\n' && terminador != EOF);
+
+                        do
+                        {
+                              printf("Informe a data dos serviços (dd/mm/aaaa): ");
+                              fgets(data_informada, sizeof(data_informada), stdin);
+                              data_informada[strcspn(data_informada, "\n")] = '\0';
+
+                              strcpy(data_servico, data_informada);
+
+                              valida = converter_data(data_informada, &data_convertida);
+
+                              if (!valida)
+                                    printf("Data inválida!\n");
+                        } while (!valida);
+
+                        if (!servicos_data_especifica(vetor_servicos, vetor_faxineiros, vetor_clientes, tamanhos,
+                              data_servico, arquivo_relatorio2))
+                        {
+                              printf("\nOcorreu um erro.\n");
+                        }
+                  }
+                  printf("\nEnter para continuar...");
+                  continuar = fgetc(stdin);
+                  break;
+            case 3:
+                  // 3. Listar todos os serviços de um faxineiro (pelo CPF)
+                  if (tamanho_servico == 0)
+                        printf("\nOps, não tem nada aqui!\n");
+                  else
+                  {
+                        while ((terminador = getchar()) != '\n' && terminador != EOF);
+
+                        printf("\nInforme o cpf do faxineiro do serviço: ");
+                        fgets(cpf_faxineiro, sizeof(cpf_faxineiro), stdin);
+                        cpf_faxineiro[strcspn(cpf_faxineiro, "\n")] = '\0';
+                        if (buscar_faxineiro(vetor_faxineiros, 0, tamanhos[1] - 1, cpf_faxineiro) == -1)
+                        {
+                              printf("\nO faxineiro não existe!\n");
+                              break;
+                        }
+
+                        if (!servicos_por_faxineiro(vetor_servicos, vetor_clientes, cpf_faxineiro, tamanhos, arquivo_relatorio3))
+                        {
+                              printf("\nOcorreu um erro.\n");
+                        }
+                  }
+                  printf("\nEnter para continuar...");
+                  continuar = fgetc(stdin);
+                  break;
+            case 4:
+                  printf("\nVoltando...\n");
+                  break;
+            default:
+                  printf("\nOpção inválida\n");
+                  break;
+            }
+
+      } while (opcao != 4);
+
+      if (vetor_servicos != NULL)
+      {
+            free(vetor_servicos);
+            vetor_servicos = NULL;
+      }
+      if (vetor_faxineiros != NULL)
+      {
+            free(vetor_faxineiros);
+            vetor_faxineiros = NULL;
+      }
+      if (vetor_clientes != NULL)
+      {
+            free(vetor_clientes);
+            vetor_clientes = NULL;
+      }
+}
+
 // Pragrama principal do CRUD
 int main()
 {
@@ -2100,6 +2747,7 @@ int main()
             case 4:
                   // Submenu Relatórios
                   printf("\n===== Submenu Relatórios =====\n");
+                  main_relatorios();
                   break;
             case 5:
                   printf("\nSaindo...\n");

@@ -1228,8 +1228,8 @@ void listar_todos_servicos(servico* servicos, faxineiro* faxineiros, cliente* cl
             }
             else
             {
-                  printf("\nCPF do faxineiro: %s\n", servicos[i].cpf_faxineiro);
                   printf("Nome do faxineiro(a): %s\n", faxineiros[indice_faxineiro].nome);
+                  printf("\nCPF do faxineiro: %s\n", servicos[i].cpf_faxineiro);
             }
 
             if (indice_cliente == -1)
@@ -1238,8 +1238,8 @@ void listar_todos_servicos(servico* servicos, faxineiro* faxineiros, cliente* cl
             }
             else 
             {
-                  printf("CPF do cliente: %s\n", servicos[i].cpf_cliente);
                   printf("Nome do cliente: %s\n", clientes[indice_cliente].nome);
+                  printf("CPF do cliente: %s\n", servicos[i].cpf_cliente);
             }
             
             printf("Data do serviço: %02d/%02d/%04d\n",
@@ -1278,8 +1278,8 @@ void listar_um_servico(servico* servicos, faxineiro* faxineiros, cliente* client
             }
             else
             {
-                  printf("\nCPF do faxineiro: %s\n", servicos[indice].cpf_faxineiro);
                   printf("Nome do faxineiro(a): %s\n", faxineiros[indice_faxineiro].nome);
+                  printf("\nCPF do faxineiro: %s\n", servicos[indice].cpf_faxineiro);
             }
 
             if (indice_cliente == -1)
@@ -1288,8 +1288,8 @@ void listar_um_servico(servico* servicos, faxineiro* faxineiros, cliente* client
             }
             else 
             {
-                  printf("CPF do cliente: %s\n", servicos[indice].cpf_cliente);
                   printf("Nome do cliente: %s\n", clientes[indice_cliente].nome);
+                  printf("CPF do cliente: %s\n", servicos[indice].cpf_cliente);
             }
 
             printf("Data do serviço: %02d/%02d/%04d\n",
